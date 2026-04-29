@@ -1,0 +1,89 @@
+# Uke 16 Oppgave 3
+
+## a) Modifisering av `BinaerTreNode`
+
+Vi legger til variabelen `hogdeU` og oppdaterer konstruktøren. En ny node som legges til som et blad, vil alltid ha høyde 1.
+
+```java
+public class BinaerTreNode<T extends Comparable<? super T>> {
+    private T element;
+    private BinaerTreNode<T> venstre;
+    private BinaerTreNode<T> hoyre;
+    private int hogdeU; // Den nye variabelen
+
+    public BinaerTreNode(T element) {
+        this.element = element;
+        this.venstre = null;
+        this.hoyre = null;
+        this.hogdeU = 1; // En ny node har høyde 1
+    }
+
+    public int getHogdeU() {
+        return hogdeU;
+    }
+
+    public void setHogdeU(int hogdeU) {
+        this.hogdeU = hogdeU;
+    }
+}
+```
+
+## b) Sjekke om treet er balansert
+
+For at et tre skal være balansert, må differansen mellom venstre og høyre undertre være høyst 1 ($\left| h_L - h_R \right| \le 1$), og dette må gjelde for **alle** noder i treet.
+
+```java
+public boolean erBalansert(BinaerTreNode<T> p) {
+    if (p == null) {
+        return true; // Et tomt tre er balansert
+    }
+
+    // Finn høyden på venstre og høyre undertre
+    int hV = (p.getVenstre() != null) ? p.getVenstre().getHogdeU() : 0;
+    int hH = (p.getHoyre() != null) ? p.getHoyre().getHogdeU() : 0;
+
+    // Sjekk balanse-faktoren for denne noden
+    if (Math.abs(hV - hH) > 1) {
+        return false;
+    }
+
+    // Sjekk rekursivt nedover i treet
+    return erBalansert(p.getVenstre()) && erBalansert(p.getHoyre());
+}
+```
+
+## c) Frivillig: Oppdatere `hogdeU` i `leggTil`
+
+Når vi legger til en node rekursivt, vil vi oppdatere høyden på vei "opp" igjen fra rekursjonen. Høyden til en node er alltid $1 + \max(\text{høyde venstre}, \text{høyde høyre})$.
+
+```java
+public BinaerTreNode<T> leggTil(BinaerTreNode<T> p, T element) {
+    if (p == null) {
+        return new BinaerTreNode<>(element);
+    }
+
+    int sammenlign = element.compareTo(p.getElement());
+
+    if (sammenlign < 0) {
+        p.setVenstre(leggTil(p.getVenstre(), element));
+    } else if (sammenlign > 0) {
+        p.setHoyre(leggTil(p.getHoyre(), element));
+    }
+
+    // Oppdater hogdeU for den aktuelle noden etter at barnet er lagt til
+    oppdaterHogde(p);
+
+    return p;
+}
+
+private void oppdaterHogde(BinaerTreNode<T> p) {
+    int hV = (p.getVenstre() != null) ? p.getVenstre().getHogdeU() : 0;
+    int hH = (p.getHoyre() != null) ? p.getHoyre().getHogdeU() : 0;
+    
+    p.setHogdeU(1 + Math.max(hV, hH));
+}
+```
+
+## Hvorfor er dette effektivt?
+
+Uten variabelen `hogdeU` måtte `erBalansert` kalt en `finnHoyde`-metode som besøker alle noder under seg. Det ville ført til en tidskompleksitet på $O(n^2)$ i verste fall. Med variabelen lagret, utfører vi sjekken i $O(n)$ fordi hver høyde-oppslag nå skjer i konstant tid, $O(1)$.
